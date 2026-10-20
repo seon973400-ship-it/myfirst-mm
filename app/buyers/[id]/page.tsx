@@ -5,9 +5,11 @@ import { notFound } from "next/navigation";
 import GradeBadge from "@/components/GradeBadge";
 import PageHeader from "@/components/PageHeader";
 import ReviewForm from "@/components/ReviewForm";
+import RiskMeter from "@/components/RiskMeter";
 import SpeakButton from "@/components/SpeakButton";
-import { getBuyer } from "@/lib/buyers";
+import { getBuyer, getBuyers } from "@/lib/buyers";
 import { int, kst, pct, usd } from "@/lib/format";
+import { riskRank } from "@/lib/metrics";
 import { getReviews, REVIEW_STATUS_CLASS } from "@/lib/reviews";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,9 @@ export default async function Page({ params }: Props) {
   const buyer = await getBuyer(id);
   if (!buyer) notFound();
   const reviews = await getReviews(buyer.id);
+  // 순위는 전체와 견줘야 하므로 전체를 읽어 riskRank(topRisk와 같은 정렬)로 센다
+  const all = await getBuyers();
+  const rank = riskRank(all, buyer.id);
 
   // 읽어 주기 문장 — 화면과 같은 값 · 같은 형식(int · pct)으로 서버에서 만든다
   const latest = reviews[0];
@@ -64,6 +69,8 @@ export default async function Page({ params }: Props) {
       />
 
       <SpeakButton text={speech} />
+
+      <RiskMeter grade={buyer.grade} score={buyer.pd30d} rank={rank} total={all.length} />
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {facts.map((f) => (

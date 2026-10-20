@@ -39,9 +39,12 @@ export function kpis(buyers: Buyer[]) {
   };
 }
 
-/** S · A · B · C 곳 수(이 순서) */
-export function gradeCounts(buyers: Buyer[]): { grade: Grade; count: number }[] {
-  return GRADES.map((grade) => ({ grade, count: buyers.filter((b) => b.grade === grade).length }));
+/** S · A · B · C 곳 수(이 순서)와 전체 중 몫(0–1) */
+export function gradeCounts(buyers: Buyer[]): { grade: Grade; count: number; share: number | null }[] {
+  return GRADES.map((grade) => {
+    const count = buyers.filter((b) => b.grade === grade).length;
+    return { grade, count, share: ratio(count, buyers.length) };
+  });
 }
 
 export function topRisk(buyers: Buyer[], n = 10): Buyer[] {
@@ -69,6 +72,21 @@ export function byRegion(buyers: Buyer[]) {
 export function filterByGrade(buyers: Buyer[], grade: unknown): Buyer[] {
   const list = isGrade(grade) ? buyers.filter((b) => b.grade === grade) : buyers;
   return [...list].sort(byRisk);
+}
+
+/** 찾는 말이 번호 · 이름 · 나라(한글) · 나라 코드 · 지역 중 하나에 들어 있으면 남긴다(대소문자 무시). 비면 전부. 순서는 그대로. */
+export function searchBuyers(buyers: Buyer[], q: string): Buyer[] {
+  const key = q.trim().toLowerCase();
+  if (!key) return buyers;
+  return buyers.filter((b) =>
+    [b.id, b.name, b.countryKo, b.countryCode, b.region].some((v) => v.toLowerCase().includes(key)),
+  );
+}
+
+/** 위험 점수 높은 순(topRisk와 같은 정렬)으로 몇 위인지 — 1부터. 없으면 null. */
+export function riskRank(buyers: Buyer[], id: string): number | null {
+  const i = [...buyers].sort(byRisk).findIndex((b) => b.id === id);
+  return i < 0 ? null : i + 1;
 }
 
 /** 등급 맞히기 문제 수 — 그냥 무작위면 거의 S만 나오므로 등급별로 나눠 고른다. */
