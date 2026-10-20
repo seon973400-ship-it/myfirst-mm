@@ -4,10 +4,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import GradeBadge from "@/components/GradeBadge";
 import PageHeader from "@/components/PageHeader";
+import ReviewForm from "@/components/ReviewForm";
 import { getBuyer } from "@/lib/buyers";
-import { int, pct, usd } from "@/lib/format";
+import { int, kst, pct, usd } from "@/lib/format";
+import { getReviews, REVIEW_STATUS_CLASS } from "@/lib/reviews";
 
-// 바이어 상세 — 요청 때 만든다(generateStaticParams 없음). 5일차에 DB로 바꿔도 그대로.
+export const dynamic = "force-dynamic";
+
+// 바이어 상세 — 요청 때마다 DB에서 읽어 만든다(generateStaticParams 없음).
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -20,6 +24,7 @@ export default async function Page({ params }: Props) {
   const { id } = await params;
   const buyer = await getBuyer(id);
   if (!buyer) notFound();
+  const reviews = await getReviews(buyer.id);
 
   const facts: { label: string; value: ReactNode; num?: boolean }[] = [
     { label: "나라", value: buyer.countryKo },
@@ -71,6 +76,34 @@ export default async function Page({ params }: Props) {
           <p className="text-muted">표시된 신호가 없습니다.</p>
         )}
         <p className="text-sm text-muted">이 신호들은 확인해 볼 이유이지, 연체의 원인이라는 뜻은 아닙니다.</p>
+      </section>
+
+      <section aria-labelledby="reviews" className="space-y-3">
+        <h2 id="reviews" className="text-lg font-semibold text-ink">
+          확인 기록
+        </h2>
+        <ReviewForm buyerId={buyer.id} />
+        {reviews.length > 0 ? (
+          <ul className="space-y-2">
+            {reviews.map((r) => (
+              <li key={r.id} className="space-y-1 rounded-lg border border-line p-3">
+                <span
+                  className={`inline-flex items-center rounded border px-1.5 text-sm font-semibold ${
+                    REVIEW_STATUS_CLASS[r.status] ?? "border-line text-muted"
+                  }`}
+                >
+                  {r.status}
+                </span>
+                <p className="whitespace-pre-wrap break-words text-ink">{r.memo}</p>
+                <p className="text-sm text-muted">
+                  {r.reviewer} · <span className="num">{kst(r.createdAt)}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted">아직 확인 기록이 없습니다</p>
+        )}
       </section>
 
       <Link href="/buyers" className="inline-flex min-h-11 items-center rounded-md border border-line px-4 text-accent">

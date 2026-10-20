@@ -9,6 +9,8 @@ import { getBuyers, type Buyer } from "@/lib/buyers";
 import { int, pct, usd } from "@/lib/format";
 import { byRegion, filterByGrade, gradeCounts, isGrade, kpis, topRisk } from "@/lib/metrics";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "바이어" };
 
 // 바이어 이름 칸: 상세 쪽 링크 + 아래에 작게 id. 첫 열이라 휴대폰 카드의 제목이 된다.
