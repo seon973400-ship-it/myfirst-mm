@@ -1,6 +1,7 @@
 import Link from "next/link";
 import DeployBadge from "@/components/DeployBadge";
 import KpiCard from "@/components/KpiCard";
+import LiveReviews from "@/components/LiveReviews";
 import Notice from "@/components/Notice";
 import PageHeader from "@/components/PageHeader";
 import { getBuyers } from "@/lib/buyers";
@@ -13,6 +14,11 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const buyers = await getBuyers();
   const recent = await getRecentReviews(5);
+  // 저절로 바뀌는 화면에 줄 값 — 가장 새 기록의 번호 · 한 줄 요약 · 이번에 읽은 시각(서버에서 kst)
+  const latest = recent[0];
+  const latestText = latest
+    ? `${latest.buyerId} · ${latest.status} · ${latest.memo.length > 30 ? `${latest.memo.slice(0, 30)}…` : latest.memo}`
+    : "";
   const total = buyers.length;
   const gradeC = buyers.filter((b) => b.grade === "C");
   const arAll = buyers.reduce((sum, b) => sum + b.openArUsd, 0);
@@ -41,6 +47,7 @@ export default async function Home() {
         <h2 id="recent-reviews" className="text-lg font-semibold text-ink">
           최근 확인 기록
         </h2>
+        <LiveReviews latestId={latest?.id ?? null} latestText={latestText} checkedAt={kst(new Date(), true)} />
         {recent.length > 0 ? (
           <ul className="space-y-2">
             {recent.map((r) => (

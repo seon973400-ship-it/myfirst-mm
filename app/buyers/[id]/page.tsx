@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import GradeBadge from "@/components/GradeBadge";
 import PageHeader from "@/components/PageHeader";
 import ReviewForm from "@/components/ReviewForm";
+import SpeakButton from "@/components/SpeakButton";
 import { getBuyer } from "@/lib/buyers";
 import { int, kst, pct, usd } from "@/lib/format";
 import { getReviews, REVIEW_STATUS_CLASS } from "@/lib/reviews";
@@ -25,6 +26,15 @@ export default async function Page({ params }: Props) {
   const buyer = await getBuyer(id);
   if (!buyer) notFound();
   const reviews = await getReviews(buyer.id);
+
+  // 읽어 주기 문장 — 화면과 같은 값 · 같은 형식(int · pct)으로 서버에서 만든다
+  const latest = reviews[0];
+  const speech = [
+    `${buyer.id} ${buyer.name}.`,
+    `등급 ${buyer.grade}.`,
+    `채권 ${int(buyer.openArUsd)}달러, 연체 ${int(buyer.overdueUsd)}달러, 위험 점수 ${pct(buyer.pd30d)}.`,
+    latest ? `최근 기록: ${latest.status}, ${latest.memo}` : "아직 확인 기록이 없습니다.",
+  ].join(" ");
 
   const facts: { label: string; value: ReactNode; num?: boolean }[] = [
     { label: "나라", value: buyer.countryKo },
@@ -52,6 +62,8 @@ export default async function Page({ params }: Props) {
         asof="2026-09-30 · (가상) 합성 데이터"
         line={`${buyer.id} · ${buyer.countryKo} · ${buyer.region}`}
       />
+
+      <SpeakButton text={speech} />
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {facts.map((f) => (
